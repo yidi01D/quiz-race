@@ -46,8 +46,9 @@ function getLanIp() {
 }
 
 const LAN_IP = getLanIp();
-// 云端部署时用公网地址（Render 会自动注入 RENDER_EXTERNAL_URL）；否则用局域网地址
-const PUBLIC_URL = (process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL || '').replace(/\/+$/, '');
+// 云端部署时用公网地址（Render 注入 RENDER_EXTERNAL_URL；Railway 注入 RAILWAY_PUBLIC_DOMAIN）；否则用局域网地址
+const RAILWAY_URL = process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : '';
+const PUBLIC_URL = (process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL || RAILWAY_URL || '').replace(/\/+$/, '');
 let JOIN_URL = PUBLIC_URL ? `${PUBLIC_URL}/player` : `http://${LAN_IP}:${PORT}/player`;
 
 function loadQuestions() {
