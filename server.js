@@ -677,7 +677,7 @@ wss.on('connection', (ws) => {
   });
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log('\n=== 竞速答题服务器已启动 ===');
   console.log(`主持人大屏:  http://localhost:${PORT}/host`);
   console.log(`题目编辑页:  http://localhost:${PORT}/editor`);
