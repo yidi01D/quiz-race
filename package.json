@@ -1,0 +1,19 @@
+{
+  "name": "quiz-race",
+  "version": "1.0.0",
+  "description": "竞速答题 — 视频题目 + 手机扫码实时抢答系统",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "qrcode": "^1.5.3",
+    "ws": "^8.16.0"
+  },
+  "optionalDependencies": {
+    "@ngrok/ngrok": "^1.7.0"
+  }
+}

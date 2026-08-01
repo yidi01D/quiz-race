@@ -1,0 +1,104 @@
+{
+  "questions": [
+    {
+      "prompt": "贵妃很喜欢这个钿花，你要如何回答她？",
+      "questionVideo": "/videos/第1题题目.mp4",
+      "timeLimit": 15,
+      "correctIndex": 1,
+      "options": [
+        {
+          "text": "承认是自己的，以得贵妃欢心",
+          "video": "/videos/第1题A-承认是自己的.mp4"
+        },
+        {
+          "text": "告诉贵妃这是走在前面的人掉落的",
+          "video": "/videos/第1题B-前面的人.mp4"
+        },
+        {
+          "text": "告诉贵妃这是刘熙的",
+          "video": "/videos/第1题C-刘熙的.mp4"
+        }
+      ]
+    },
+    {
+      "prompt": "生死关头，你要如何自救？",
+      "questionVideo": "/videos/第2题题目.mp4",
+      "timeLimit": 15,
+      "correctIndex": 1,
+      "options": [
+        {
+          "text": "呼救",
+          "video": "/videos/第2题A-呼救.mp4"
+        },
+        {
+          "text": "杀了她",
+          "video": "/videos/第2题B-杀了她.mp4"
+        },
+        {
+          "text": "打晕她",
+          "video": "/videos/第2题C-打晕她.mp4"
+        }
+      ]
+    },
+    {
+      "prompt": "照儿的近侍鱼符呢？",
+      "questionVideo": "/videos/第3题题目.mp4",
+      "timeLimit": 15,
+      "correctIndex": 0,
+      "options": [
+        {
+          "text": "鱼符被刘熙盗走了",
+          "video": "/videos/第3题A-刘熙偷了.mp4"
+        },
+        {
+          "text": "我把鱼符借给了一个宫女",
+          "video": "/videos/第3题B-借给宫女.mp4"
+        },
+        {
+          "text": "鱼符被我落在陛下那儿了",
+          "video": ""
+        }
+      ]
+    },
+    {
+      "prompt": "此时众人的目光都集中在你身上，你该如何献策驯马？",
+      "questionVideo": "/videos/第4题题目.mp4",
+      "timeLimit": 15,
+      "correctIndex": 1,
+      "options": [
+        {
+          "text": "对狮子骢耳边舒缓地唱歌",
+          "video": "/videos/第4题A-唱歌.mp4"
+        },
+        {
+          "text": "用铁鞭、铁锤、匕首",
+          "video": "/videos/第4题B-铁锤.mp4"
+        }
+      ]
+    },
+    {
+      "prompt": "你看着韦贵妃递来的毒药，你决定",
+      "questionVideo": "/videos/第5题题目.mp4",
+      "timeLimit": 15,
+      "correctIndex": 2,
+      "options": [
+        {
+          "text": "答应贵妃",
+          "video": "/videos/第5题A-答应贵妃.mp4"
+        },
+        {
+          "text": "拒绝贵妃",
+          "video": "/videos/第5题B-拒绝贵妃.mp4"
+        },
+        {
+          "text": "将毒药摔地上",
+          "video": "/videos/第5题C-摔地上.mp4"
+        },
+        {
+          "text": "接过毒药一饮而尽",
+          "video": "/videos/第5题D-喝毒药.mp4"
+        }
+      ]
+    }
+  ]
+}

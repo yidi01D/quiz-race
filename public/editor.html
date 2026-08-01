@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>竞速答题 · 题目编辑</title>
+<style>
+  :root { --bg:#f4f5fb; --accent:#6c4bd1; --ok:#06a97a; --bad:#ef476f; --line:#e3e4ef; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif; background:var(--bg); color:#222; }
+  header { background:#fff; border-bottom:1px solid var(--line); position:sticky; top:0; z-index:10;
+    display:flex; align-items:center; justify-content:space-between; padding:14px 26px; }
+  header .title { font-size:20px; font-weight:800; }
+  header .title span { color:var(--accent); }
+  header .actions { display:flex; gap:10px; align-items:center; }
+  .btn { border:none; border-radius:10px; padding:10px 18px; font-size:15px; font-weight:700; cursor:pointer; }
+  .btn.primary { background:var(--accent); color:#fff; }
+  .btn.ghost { background:#eee; color:#333; }
+  .btn.small { padding:6px 12px; font-size:13px; }
+  .btn.danger { background:#fde8ee; color:var(--bad); }
+  a { color:var(--accent); }
+  .wrap { max-width:900px; margin:0 auto; padding:24px 20px 80px; }
+  .saveinfo { font-size:14px; color:var(--ok); }
+  .note { background:#fff; border:1px solid var(--line); border-left:4px solid var(--accent); border-radius:10px; padding:14px 16px; margin-bottom:18px; font-size:14px; color:#555; line-height:1.7; }
+  .note code { background:#f0eefb; padding:1px 6px; border-radius:5px; color:var(--accent); }
+  .qcard { background:#fff; border:1px solid var(--line); border-radius:16px; padding:20px; margin-bottom:20px; }
+  .qcard .qtop { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .qcard .qnum { font-size:16px; font-weight:800; color:var(--accent); }
+  .qtop .grp { display:flex; gap:6px; }
+  label { display:block; font-size:13px; color:#666; margin:12px 0 6px; font-weight:600; }
+  input[type=text], input[type=number], textarea, select {
+    width:100%; padding:10px 12px; font-size:15px; border:1px solid var(--line); border-radius:10px; background:#fafaff; font-family:inherit;
+  }
+  input:focus, textarea:focus, select:focus { outline:none; border-color:var(--accent); }
+  .videorow { display:flex; gap:8px; align-items:center; }
+  .videorow select { flex:1; }
+  .row2 { display:grid; grid-template-columns:1fr 160px; gap:16px; }
+  .opt { display:flex; gap:10px; align-items:flex-start; padding:12px; border:1px solid var(--line); border-radius:12px; margin-bottom:10px; background:#fcfcff; }
+  .opt .radio { padding-top:10px; display:flex; flex-direction:column; align-items:center; gap:4px; font-size:11px; color:#888; }
+  .opt .fields { flex:1; }
+  .opt.correct { border-color:var(--ok); background:#f0fbf7; }
+  .miniv { max-height:80px; border-radius:6px; margin-top:6px; background:#000; }
+  .hint { font-size:12px; color:#999; margin-top:4px; }
+  .addopt { margin-top:4px; }
+  .footer-actions { position:fixed; bottom:0; left:0; right:0; background:#fff; border-top:1px solid var(--line); padding:12px 26px; display:flex; justify-content:center; gap:12px; }
+  .empty { text-align:center; padding:40px; color:#999; }
+</style>
+</head>
+<body>
+<header>
+  <div class="title">🎬 题目<span>编辑</span></div>
+  <div class="actions">
+    <span class="saveinfo" id="saveinfo"></span>
+    <a href="/host" target="_blank">打开主持人大屏 ↗</a>
+    <button class="btn ghost" onclick="reload()">🔄 刷新视频列表</button>
+    <button class="btn primary" onclick="save()">💾 保存</button>
+  </div>
+</header>
+<div class="wrap">
+  <div class="note">
+    <b>视频用法（无需上传）：</b>把视频文件放进项目的 <code>videos/</code> 文件夹，然后在每题的「题目视频」和每个选项的「答案视频」下拉框里<b>直接选择文件名</b>即可。<br>
+    放好文件后，点右上角「🔄 刷新视频列表」就能看到新文件。支持 mp4 / webm / ogg / mov 等。<span id="vcount"></span>
+  </div>
+  <div id="list"></div>
+  <button class="btn ghost" onclick="addQuestion()">＋ 添加题目</button>
+</div>
+<div class="footer-actions">
+  <button class="btn ghost" onclick="addQuestion()">＋ 添加题目</button>
+  <button class="btn primary" onclick="save()">💾 保存全部</button>
+</div>
+
+<script>
+let questions = [];
+let videoFiles = [];
+
+async function reload() {
+  const r = await fetch('/api/questions'); const d = await r.json();
+  questions = d.questions || [];
+  const rv = await fetch('/api/videos'); const dv = await rv.json();
+  videoFiles = dv.videos || [];
+  document.getElementById('vcount').textContent = videoFiles.length
+    ? `　当前 videos/ 文件夹共 ${videoFiles.length} 个视频。`
+    : '　⚠️ videos/ 文件夹暂无视频，请先放入文件再刷新。';
+  render();
+}
+
+function newOption(){ return { text:'', video:'' }; }
+function addQuestion() {
+  questions.push({ prompt:'新题目', questionVideo:'', timeLimit:20, correctIndex:0, options:[newOption(), newOption()] });
+  render();
+  window.scrollTo(0, document.body.scrollHeight);
+}
+function removeQuestion(i){ if(confirm('删除这道题？')){ questions.splice(i,1); render(); } }
+function moveQuestion(i,dir){ const j=i+dir; if(j<0||j>=questions.length)return; [questions[i],questions[j]]=[questions[j],questions[i]]; render(); }
+function addOption(qi){ questions[qi].options.push(newOption()); render(); }
+function removeOption(qi,oi){
+  const q=questions[qi]; if(q.options.length<=2){alert('至少保留 2 个选项');return;}
+  q.options.splice(oi,1);
+  if(q.correctIndex>=q.options.length) q.correctIndex=0;
+  else if(q.correctIndex>oi) q.correctIndex--;
+  render();
+}
+
+const KEYS=['A','B','C','D','E','F'];
+function esc(s){ return String(s==null?'':s).replace(/"/g,'&quot;'); }
+
+// 生成视频下拉选项。sel 为当前已选值（形如 /videos/xxx.mp4）
+function videoOptions(sel){
+  let html = '<option value="">（不设置 / 无视频）</option>';
+  let found = false;
+  for (const v of videoFiles) {
+    const base = v.split('/').pop();
+    if (v === sel) found = true;
+    html += `<option value="${esc(v)}" ${v===sel?'selected':''}>${esc(base)}</option>`;
+  }
+  // 当前值不在文件夹里（例如旧的在线 URL），仍保留显示，避免丢失
+  if (sel && !found) html += `<option value="${esc(sel)}" selected>${esc(sel)} （不在 videos 文件夹）</option>`;
+  return html;
+}
+
+function render() {
+  const list = document.getElementById('list');
+  if (!questions.length) { list.innerHTML = '<div class="empty">还没有题目，点下面「添加题目」开始。</div>'; return; }
+  list.innerHTML = questions.map((q,qi)=>`
+    <div class="qcard">
+      <div class="qtop">
+        <div class="qnum">第 ${qi+1} 题</div>
+        <div class="grp">
+          <button class="btn ghost small" onclick="moveQuestion(${qi},-1)">↑</button>
+          <button class="btn ghost small" onclick="moveQuestion(${qi},1)">↓</button>
+          <button class="btn danger small" onclick="removeQuestion(${qi})">删除</button>
+        </div>
+      </div>
+      <label>题目文字</label>
+      <textarea rows="2" oninput="questions[${qi}].prompt=this.value">${esc(q.prompt)}</textarea>
+      <div class="row2">
+        <div>
+          <label>题目视频（先播放 · 从 videos/ 选择）</label>
+          <select onchange="questions[${qi}].questionVideo=this.value; previewV('qv${qi}',this.value)">${videoOptions(q.questionVideo)}</select>
+          <video id="qv${qi}" class="miniv" src="${esc(q.questionVideo)}" controls preload="metadata" ${q.questionVideo?'':'style="display:none"'}></video>
+        </div>
+        <div>
+          <label>答题时长(秒)</label>
+          <input type="number" min="5" max="120" value="${q.timeLimit||20}" oninput="questions[${qi}].timeLimit=parseInt(this.value)||20">
+          <div class="hint">用于计算速度得分</div>
+        </div>
+      </div>
+
+      <label>选项（选中圆点＝正确答案）</label>
+      ${q.options.map((o,oi)=>`
+        <div class="opt ${q.correctIndex===oi?'correct':''}">
+          <div class="radio">
+            <input type="radio" name="correct${qi}" ${q.correctIndex===oi?'checked':''} onchange="questions[${qi}].correctIndex=${oi}; render()">
+            <span>${KEYS[oi]}</span>
+          </div>
+          <div class="fields">
+            <input type="text" value="${esc(o.text)}" placeholder="选项文字" oninput="questions[${qi}].options[${oi}].text=this.value">
+            <div class="videorow" style="margin-top:8px">
+              <select onchange="questions[${qi}].options[${oi}].video=this.value; previewV('ov${qi}_${oi}',this.value)">${videoOptions(o.video)}</select>
+              <button class="btn danger small" onclick="removeOption(${qi},${oi})">✕</button>
+            </div>
+            <video id="ov${qi}_${oi}" class="miniv" src="${esc(o.video)}" controls preload="metadata" ${o.video?'':'style="display:none"'}></video>
+          </div>
+        </div>`).join('')}
+      <button class="btn ghost small addopt" onclick="addOption(${qi})">＋ 添加选项</button>
+    </div>`).join('');
+}
+
+function previewV(id, src){
+  const el=document.getElementById(id); if(!el)return;
+  if(src){ el.src=src; el.style.display=''; } else { el.style.display='none'; }
+}
+
+async function save() {
+  for(let i=0;i<questions.length;i++){
+    const q=questions[i];
+    if(!q.prompt||!q.prompt.trim()){ alert(`第 ${i+1} 题没有题目文字`); return; }
+    if(q.options.some(o=>!o.text||!o.text.trim())){ if(!confirm(`第 ${i+1} 题有空选项，仍要保存？`)) return; }
+  }
+  const info=document.getElementById('saveinfo'); info.style.color='#6c4bd1'; info.textContent='保存中…';
+  const r = await fetch('/api/questions', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({questions}) });
+  const d = await r.json();
+  if(d.ok){ info.style.color='#06a97a'; info.textContent=`✓ 已保存 ${d.count} 道题（${new Date().toLocaleTimeString()}）`; }
+  else { info.style.color='#ef476f'; info.textContent='保存失败: '+d.error; }
+}
+
+reload();
+</script>
+</body>
+</html>

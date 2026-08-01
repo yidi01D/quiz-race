@@ -1,0 +1,22 @@
+# 依赖（云端会自己 npm install）
+node_modules/
+
+# 大的本地工具，云端用不到
+ffmpeg.exe
+cloudflared.exe
+ngrok.exe
+*.zip
+
+# 转码前的 HEVC 原片（浏览器放不了，别上传，省 1.4GB）
+videos/*.mov
+videos/*.MOV
+
+# 机密：ngrok token 千万别公开
+ngrok-token.txt
+
+# 临时/日志
+*.log
+cf_test.log
+
+# 汇报文档（可选，不影响运行）
+御前竞答-汇报.pptx

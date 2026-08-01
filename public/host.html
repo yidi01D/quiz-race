@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>御前竞答 · 主持大屏</title>
+<style>
+  :root {
+    --red1:#4a0d12; --red2:#6e1119; --red3:#8a1a20;
+    --gold:#d9b34a; --gold2:#f0d284; --cream:#f6e8c8;
+    --ok:#5bb98a; --bad:#d9534f; --ink:#2a0b0d;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body {
+    font-family:"STKaiti","KaiTi","KaiTi_GB2312","楷体","Songti SC","SimSun",serif;
+    color:var(--cream); min-height:100vh;
+    background:
+      linear-gradient(rgba(40,9,12,.48), rgba(40,9,12,.70)),
+      url('/assets/bg1.jpg') center top / cover no-repeat fixed,
+      #3c0a0e;
+  }
+  /* 回纹装饰带 */
+  .meander { height:12px; background:
+    repeating-linear-gradient(90deg, var(--gold) 0 3px, transparent 3px 6px, var(--gold) 6px 9px, transparent 9px 22px);
+    opacity:.7; }
+  .frame { max-width:1240px; margin:0 auto; padding:0 10px; }
+  .wrap {
+    margin:14px auto 40px; padding:26px 34px 56px;
+    border:2px solid var(--gold); border-radius:8px;
+    background:
+      linear-gradient(180deg, rgba(74,13,18,.55), rgba(40,9,12,.55));
+    box-shadow:0 0 0 5px rgba(217,179,74,.15), inset 0 0 60px rgba(0,0,0,.4);
+    position:relative;
+  }
+  .wrap::before, .wrap::after { content:"❖"; position:absolute; color:var(--gold); font-size:22px; }
+  .wrap::before { top:6px; left:10px; } .wrap::after { top:6px; right:10px; }
+
+  .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+  .logo { font-size:30px; font-weight:800; letter-spacing:4px; color:var(--gold2);
+    text-shadow:0 2px 6px rgba(0,0,0,.6); }
+  .badge { border:1px solid var(--gold); background:rgba(0,0,0,.25); padding:8px 16px; border-radius:6px; font-size:16px; color:var(--cream); }
+  .badge b { color:var(--gold2); }
+  .badge a { color:var(--gold2); text-decoration:none; }
+  h1 { font-size:42px; margin:12px 0; letter-spacing:8px; color:var(--gold2); text-align:center;
+    text-shadow:0 2px 8px rgba(0,0,0,.6); }
+  h1::before, h1::after { content:"❁"; color:var(--gold); font-size:26px; margin:0 16px; vertical-align:middle; }
+  .muted { opacity:.85; text-align:center; }
+  .divider { text-align:center; color:var(--gold); margin:16px 0; letter-spacing:6px; opacity:.8; }
+
+  .btn {
+    background:linear-gradient(180deg,var(--gold2),var(--gold)); color:var(--ink); border:1px solid #8a6a1e;
+    font-family:inherit; font-size:21px; font-weight:800; letter-spacing:2px;
+    padding:15px 42px; border-radius:8px; cursor:pointer; transition:transform .08s, filter .15s;
+    box-shadow:0 6px 18px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.5);
+  }
+  .btn:hover { filter:brightness(1.06); } .btn:active { transform:translateY(2px); }
+  .btn.ghost { background:rgba(0,0,0,.25); color:var(--cream); border:1px solid var(--gold); box-shadow:none; }
+  .btn.big { font-size:26px; padding:20px 58px; }
+  .controls { display:flex; gap:14px; flex-wrap:wrap; justify-content:center; margin-top:26px; }
+
+  /* 大厅 */
+  .lobby { display:grid; grid-template-columns:360px 1fr; gap:40px; align-items:start; margin-top:20px; }
+  .qrcard { background:var(--cream); border:3px solid var(--gold); border-radius:12px; padding:20px; text-align:center; color:#4a0d12;
+    box-shadow:0 8px 26px rgba(0,0,0,.45); }
+  .qrcard .cap { font-size:20px; font-weight:800; letter-spacing:4px; margin-bottom:10px; color:#6e1119; }
+  .qrcard img { width:288px; height:288px; }
+  .qrcard .url { margin-top:10px; font-size:15px; word-break:break-all; color:#6e1119; font-weight:700; }
+  .qrcard .hint { margin-top:6px; font-size:12px; color:#8a6a5a; }
+  .players-title { font-size:24px; margin-bottom:14px; color:var(--gold2); letter-spacing:3px; }
+  .players { display:flex; flex-wrap:wrap; gap:14px; }
+  .pchip { background:rgba(0,0,0,.28); border:1px solid var(--gold); border-radius:8px; padding:10px 16px; display:flex; align-items:center; gap:10px; font-size:19px; position:relative; }
+  .pchip .av { width:40px; height:40px; display:flex; align-items:center; justify-content:center; font-size:30px; }
+  .pchip .av .avimg { width:40px; height:40px; }
+  .pchip.off { opacity:.4; }
+  .kick { position:absolute; top:-8px; right:-8px; background:var(--bad); border:1px solid #fff; color:#fff; width:22px; height:22px; border-radius:50%; cursor:pointer; font-size:13px; line-height:1; display:none; }
+  .pchip:hover .kick { display:block; }
+  .empty { opacity:.7; font-size:19px; padding:20px 0; }
+  .avimg { width:100%; height:100%; object-fit:cover; display:block; border-radius:8px; }
+
+  /* 题目区 */
+  .stage { text-align:center; }
+  .qmeta { font-size:22px; color:var(--gold2); margin-bottom:6px; letter-spacing:3px; }
+  .qprompt { font-size:36px; font-weight:800; margin:6px 0 16px; color:var(--cream); text-shadow:0 2px 6px rgba(0,0,0,.5); }
+  video { width:100%; max-width:820px; border-radius:10px; background:#000; border:3px solid var(--gold); box-shadow:0 12px 40px rgba(0,0,0,.6); }
+
+  /* 倒计时（宫灯朱印样式） */
+  .timerbox { margin:16px auto 4px; max-width:420px; }
+  .timer-ring { width:104px; height:104px; border-radius:50%; margin:0 auto 8px;
+    display:flex; align-items:center; justify-content:center; font-size:46px; font-weight:900; color:var(--ink);
+    background:radial-gradient(circle at 50% 34%, var(--gold2), var(--gold));
+    border:4px solid #7a5a1e; box-shadow:0 0 0 4px rgba(217,179,74,.25), 0 8px 24px rgba(0,0,0,.55); }
+  .timer-ring.urgent { background:radial-gradient(circle at 50% 34%, #f0a3a3, var(--bad)); color:#fff; animation:pulse .6s infinite; }
+  @keyframes pulse { 50% { transform:scale(1.09); } }
+  .timer-bar-bg { height:10px; background:rgba(0,0,0,.35); border:1px solid var(--gold); border-radius:6px; overflow:hidden; }
+  .timer-bar { height:100%; width:100%; background:linear-gradient(90deg,var(--gold2),var(--gold)); }
+  .timerbox.urgent .timer-bar { background:linear-gradient(90deg,#f0a3a3,var(--bad)); }
+
+  .options { display:grid; grid-template-columns:1fr 1fr; gap:16px; max-width:900px; margin:22px auto 0; }
+  .opt {
+    background:rgba(0,0,0,.28); border:2px solid var(--gold); border-radius:10px; padding:20px; font-size:24px;
+    display:flex; align-items:center; gap:16px; text-align:left; color:var(--cream);
+  }
+  .opt .key { width:46px; height:46px; border-radius:8px; background:linear-gradient(180deg,var(--gold2),var(--gold)); color:var(--ink); display:flex; align-items:center; justify-content:center; font-weight:800; flex:0 0 auto; }
+  .opt.correct { border-color:var(--ok); background:rgba(91,185,138,.20); box-shadow:0 0 18px rgba(91,185,138,.35); }
+  .opt.correct .key { background:var(--ok); color:#06301f; }
+  .answer-count { font-size:22px; margin-top:18px; color:var(--cream); }
+  .answer-count b { color:var(--gold2); font-size:30px; }
+
+  /* 排名 */
+  .ranking { max-width:780px; margin:24px auto 0; text-align:left; }
+  .ranking h2 { color:var(--gold2); letter-spacing:4px; margin-bottom:14px; text-align:center; font-size:26px; }
+  .rank-row { display:flex; align-items:center; gap:16px; background:rgba(0,0,0,.28); border:1px solid var(--gold); border-radius:8px; padding:12px 20px; margin-bottom:10px; font-size:21px; }
+  .rank-row .rk { font-size:26px; font-weight:800; width:44px; color:var(--gold2); text-align:center; }
+  .rank-row .av { width:44px; height:44px; display:flex; align-items:center; justify-content:center; font-size:30px; }
+  .rank-row .av .avimg { width:44px; height:44px; border-radius:8px; }
+  .rank-row .nm { flex:1; }
+  .rank-row .sc { font-weight:800; font-size:24px; color:var(--gold2); }
+  .rank-row .tag { font-size:15px; padding:3px 10px; border-radius:6px; }
+  .tag.ok { background:rgba(91,185,138,.28); color:#bfe6d2; }
+  .tag.bad { background:rgba(217,83,79,.28); color:#f3c6c4; }
+  .tag.no { background:rgba(255,255,255,.12); opacity:.75; }
+  .rank-row.top1 { background:linear-gradient(90deg, rgba(240,210,132,.30), rgba(0,0,0,.28)); border-color:var(--gold2); }
+
+  /* 结果页 */
+  .podium { display:flex; justify-content:center; align-items:flex-end; gap:22px; margin:30px 0; }
+  .pod { text-align:center; }
+  .pod .av { width:72px; height:72px; margin:0 auto; display:flex; align-items:center; justify-content:center; font-size:56px; }
+  .pod .av .avimg { width:72px; height:72px; border-radius:14px; border:2px solid var(--gold); }
+  .pod .bar { border-radius:8px 8px 0 0; width:158px; display:flex; flex-direction:column; justify-content:flex-end; padding:14px; margin-top:8px; border:1px solid #8a6a1e; }
+  .pod.p1 .bar { height:220px; background:linear-gradient(var(--gold2),var(--gold)); color:var(--ink); }
+  .pod.p2 .bar { height:170px; background:linear-gradient(#e6e0d0,#b9b09a); color:#3a3020; }
+  .pod.p3 .bar { height:132px; background:linear-gradient(#e6b98a,#bb7d47); color:#3a2500; }
+  .pod .nm { font-size:20px; font-weight:800; }
+  .pod .sc { font-size:26px; font-weight:900; }
+  .review { max-width:1000px; margin:28px auto 0; text-align:left; }
+  .review h2 { font-size:26px; margin:24px 0 12px; color:var(--gold2); letter-spacing:3px; text-align:center; }
+  .qblock { background:rgba(0,0,0,.28); border:1px solid var(--gold); border-radius:10px; padding:18px; margin-bottom:18px; }
+  .qblock .qh { font-size:22px; font-weight:800; margin-bottom:14px; color:var(--cream); }
+  .clips { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .clip { background:rgba(0,0,0,.3); border-radius:8px; padding:12px; border:1px solid rgba(217,179,74,.3); }
+  .clip.correct { border-color:var(--ok); }
+  .clip .lbl { font-size:17px; margin-bottom:8px; display:flex; gap:8px; align-items:center; color:var(--cream); }
+  .clip video { max-width:100%; border-width:2px; }
+  .clip .badge2 { font-size:13px; padding:2px 8px; border-radius:5px; background:var(--ok); color:#06301f; }
+  .hidden { display:none !important; }
+  .connbar { position:fixed; top:0; left:0; right:0; background:var(--bad); text-align:center; padding:8px; font-size:15px; z-index:20; }
+</style>
+</head>
+<body>
+<div id="conn" class="connbar hidden">连接已断开，正在重连…</div>
+<div class="meander"></div>
+<div class="frame">
+<div class="wrap">
+  <div class="topbar">
+    <div class="logo">🏮 御 前 竞 答 🏮</div>
+    <div class="badge">在场应试：<b id="pcount">0</b> 人 · <a href="/editor" target="_blank">编纂题册</a></div>
+  </div>
+
+  <!-- 大厅 -->
+  <section id="view-lobby">
+    <h1>扫 码 入 场</h1>
+    <p class="muted">以手机扫描下方「入场宝镜」，题名入册、择选头像，即可登场竞答。</p>
+    <div class="divider">❈ ❈ ❈</div>
+    <div class="lobby">
+      <div class="qrcard">
+        <div class="cap">入 场 宝 镜</div>
+        <img id="qr" alt="加入二维码" />
+        <div class="url" id="joinurl"></div>
+        <div class="hint">或于手机浏览器打开此地址</div>
+      </div>
+      <div>
+        <div class="players-title">已入场·应试者</div>
+        <div class="players" id="lobbyPlayers"></div>
+      </div>
+    </div>
+    <div class="controls">
+      <button class="btn big" onclick="send('hostStart')">▶ 开 考</button>
+    </div>
+  </section>
+
+  <!-- 题目/答题/公布 共用舞台 -->
+  <section id="view-stage" class="hidden stage">
+    <div class="qmeta" id="qmeta"></div>
+    <div class="qprompt" id="qprompt"></div>
+    <video id="stageVideo" controls playsinline></video>
+    <div id="timerBox" class="timerbox hidden"></div>
+    <div id="optionsBox" class="options hidden"></div>
+    <div id="answerInfo" class="answer-count hidden"></div>
+    <div id="rankBox" class="ranking hidden"></div>
+    <div class="controls" id="stageControls"></div>
+  </section>
+
+  <!-- 结果 -->
+  <section id="view-results" class="hidden">
+    <h1>🏆 金 榜 题 名</h1>
+    <div class="podium" id="podium"></div>
+    <div class="ranking" id="finalRank"></div>
+    <div class="review" id="review">
+      <h2>题 目 回 顾 · 各 答 案 影 像</h2>
+      <div id="reviewList"></div>
+    </div>
+    <div class="controls">
+      <button class="btn ghost" onclick="send('hostReset')">↺ 返回大厅 / 重新开始</button>
+    </div>
+  </section>
+</div>
+</div>
+<div class="meander"></div>
+
+<script>
+let ws, state = null;
+let clockOffset = 0, countdownTimer = null;
+function connect() {
+  ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}`);
+  ws.onopen = () => { document.getElementById('conn').classList.add('hidden'); send('hostJoin'); };
+  ws.onmessage = (e) => {
+    const msg = JSON.parse(e.data);
+    if (msg.type === 'state') {
+      state = msg;
+      if (typeof msg.serverNow === 'number') clockOffset = msg.serverNow - Date.now();
+      render();
+    }
+  };
+  ws.onclose = () => { document.getElementById('conn').classList.remove('hidden'); setTimeout(connect, 1000); };
+}
+function send(type, extra = {}) { if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type, ...extra })); }
+connect();
+
+const $ = (id) => document.getElementById(id);
+function show(view) {
+  ['lobby','stage','results'].forEach(v => $('view-'+v).classList.toggle('hidden', v !== view));
+}
+function isImg(a){ return /^(https?:|\/)/.test(a); }
+function avatarHtml(a){ return isImg(a) ? `<img class="avimg" src="${a}" alt="">` : escapeHtml(a); }
+
+let lastVideoSrc = '';
+function setVideo(el, src, loop = false) {
+  if (!src) { el.classList.add('hidden'); el.removeAttribute('src'); el.load(); lastVideoSrc=''; return; }
+  el.classList.remove('hidden');
+  el.loop = loop;
+  if (src !== lastVideoSrc) {
+    el.src = src; lastVideoSrc = src;
+    el.play().catch(()=>{});
+  }
+}
+
+const KEYS = ['A','B','C','D','E','F'];
+
+// ---- 倒计时 ----
+function stopCountdown(){ if(countdownTimer){ clearInterval(countdownTimer); countdownTimer=null; } }
+function startCountdown(){ if(countdownTimer) return; countdownTimer=setInterval(tickCountdown, 200); tickCountdown(); }
+function tickCountdown(){
+  if(!state || state.phase!=='answering' || !state.answerDeadline){ stopCountdown(); return; }
+  const box=$('timerBox'), num=$('timerNum'), bar=$('timerBar');
+  if(!num){ return; }
+  const remain=Math.max(0, state.answerDeadline-(Date.now()+clockOffset));
+  const secs=Math.ceil(remain/1000);
+  num.textContent=secs;
+  if(bar && state.timeLimit) bar.style.width = Math.max(0,Math.min(100, remain/(state.timeLimit*1000)*100)) + '%';
+  const urgent = secs<=3;
+  const ring=$('timerRing'); if(ring) ring.classList.toggle('urgent', urgent);
+  if(box) box.classList.toggle('urgent', urgent);
+  if(remain<=0) stopCountdown();
+}
+
+function render() {
+  if (!state) return;
+  $('pcount').textContent = state.playerCount;
+  $('qr').src = state.qr || '';
+  $('joinurl').textContent = state.joinUrl || '';
+
+  if (state.phase !== 'answering') stopCountdown();
+
+  // 离开答题舞台（回大厅或看金榜）时，停止播放上一步残留的视频，避免隐藏区仍在放声音
+  if (state.phase === 'lobby' || state.phase === 'results') {
+    const sv = $('stageVideo'); if (sv && sv.getAttribute('src')) setVideo(sv, '');
+  }
+
+  if (state.phase === 'lobby') return renderLobby();
+  if (state.phase === 'results') return renderResults();
+  return renderStage();
+}
+
+function renderLobby() {
+  show('lobby');
+  const box = $('lobbyPlayers');
+  if (!state.ranking.length) { box.innerHTML = '<div class="empty">尚无应试者入场…</div>'; return; }
+  box.innerHTML = state.ranking.map(p => `
+    <div class="pchip ${p.connected?'':'off'}">
+      <span class="av">${avatarHtml(p.avatar)}</span><span>${escapeHtml(p.nickname)}</span>
+      <button class="kick" onclick="send('hostKick',{playerId:'${p.id}'})">×</button>
+    </div>`).join('');
+}
+
+function renderStage() {
+  show('stage');
+  const q = state.question;
+  if (!q) return;
+  $('qmeta').textContent = `第 ${q.index + 1} / ${q.total} 题`;
+  $('qprompt').textContent = q.prompt;
+
+  const video = $('stageVideo');
+  const optBox = $('optionsBox');
+  const info = $('answerInfo');
+  const rankBox = $('rankBox');
+  const ctrl = $('stageControls');
+  const timerBox = $('timerBox');
+
+  if (state.phase === 'intro') {
+    setVideo(video, q.questionVideo);
+    optBox.classList.add('hidden');
+    info.classList.add('hidden');
+    rankBox.classList.add('hidden');
+    timerBox.classList.add('hidden');
+    ctrl.innerHTML = `<button class="btn big" onclick="send('hostShowOptions')">显示选项，开始答题 ▶</button>`;
+  } else if (state.phase === 'answering') {
+    setVideo(video, '');   // 进入答题：停止播放上一步（题目介绍）的视频
+    // 倒计时
+    timerBox.classList.remove('hidden');
+    timerBox.innerHTML = `<div class="timer-ring" id="timerRing"><span id="timerNum">--</span></div>
+      <div class="timer-bar-bg"><div class="timer-bar" id="timerBar"></div></div>`;
+    optBox.classList.remove('hidden');
+    optBox.innerHTML = q.options.map((o,i) =>
+      `<div class="opt"><div class="key">${KEYS[i]}</div><div>${escapeHtml(o.text)}</div></div>`).join('');
+    const answered = state.ranking.filter(p => p.answered).length;
+    info.classList.remove('hidden');
+    info.innerHTML = `已作答 <b>${answered}</b> / ${state.playerCount} 人`;
+    rankBox.classList.add('hidden');
+    ctrl.innerHTML = `<button class="btn big" onclick="send('hostReveal')">提前公布答案 ✓</button>`;
+    startCountdown();
+  } else if (state.phase === 'reveal') {
+    timerBox.classList.add('hidden');
+    optBox.classList.remove('hidden');
+    optBox.innerHTML = q.options.map((o,i) =>
+      `<div class="opt ${i===q.correctIndex?'correct':''}"><div class="key">${KEYS[i]}</div><div>${escapeHtml(o.text)}</div></div>`).join('');
+    const correctVideo = q.options[q.correctIndex] ? q.options[q.correctIndex].video : '';
+    setVideo(video, correctVideo || q.questionVideo);
+    info.classList.add('hidden');
+    rankBox.classList.remove('hidden');
+    rankBox.innerHTML = `<h2>当 前 排 名</h2>` + rankingRows(state.ranking, true);
+    const isLast = q.index + 1 >= q.total;
+    ctrl.innerHTML = isLast
+      ? `<button class="btn big" onclick="send('hostResults')">揭晓金榜 🏆</button>`
+      : `<button class="btn big" onclick="send('hostNext')">下一题 →</button>`;
+  }
+}
+
+function rankingRows(list, showLast) {
+  return list.map(p => {
+    let tag = '';
+    if (showLast) {
+      if (p.lastCorrect === true) tag = `<span class="tag ok">答对 +${p.lastGain}</span>`;
+      else if (p.lastCorrect === false) tag = `<span class="tag bad">答错</span>`;
+      else tag = `<span class="tag no">未作答</span>`;
+    }
+    return `<div class="rank-row ${p.rank===1?'top1':''}">
+      <div class="rk">${p.rank}</div>
+      <div class="av">${avatarHtml(p.avatar)}</div>
+      <div class="nm">${escapeHtml(p.nickname)} ${tag}</div>
+      <div class="sc">${p.score}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderResults() {
+  show('results');
+  const list = state.ranking;
+  const order = [1,0,2];
+  const pod = $('podium');
+  pod.innerHTML = order.map(idx => {
+    const p = list[idx]; if (!p) return '';
+    const place = idx+1;
+    return `<div class="pod p${place}">
+      <div class="av">${avatarHtml(p.avatar)}</div>
+      <div class="nm">${escapeHtml(p.nickname)}</div>
+      <div class="bar"><div class="sc">${p.score}</div><div>第${place}名</div></div>
+    </div>`;
+  }).join('');
+  $('finalRank').innerHTML = rankingRows(list, false);
+
+  const rl = $('reviewList');
+  rl.innerHTML = (state.allQuestions || []).map(q => `
+    <div class="qblock">
+      <div class="qh">第 ${q.index+1} 题：${escapeHtml(q.prompt)}</div>
+      <div class="clips">
+        ${q.options.map((o,i) => `
+          <div class="clip ${i===q.correctIndex?'correct':''}">
+            <div class="lbl">${KEYS[i]}. ${escapeHtml(o.text)} ${i===q.correctIndex?'<span class="badge2">正确答案</span>':''}</div>
+            ${o.video ? `<video src="${o.video}" controls playsinline preload="metadata"></video>` : '<div class="muted">（未设置视频片段）</div>'}
+          </div>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+</script>
+</body>
+</html>

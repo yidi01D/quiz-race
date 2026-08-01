@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>竞速答题 · 参赛</title>
+<style>
+  :root { --accent:#f0d284; --gold:#d9b34a; --ok:#5bb98a; --bad:#d9534f; --card:rgba(10,24,18,.62); --cream:#f6e8c8; }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  body {
+    font-family:"STKaiti","KaiTi","楷体","PingFang SC","Microsoft YaHei",serif; color:var(--cream); min-height:100vh;
+    background:#12261f;
+    display:flex; flex-direction:column;
+  }
+  body::before {
+    content:''; position:fixed; inset:0; z-index:-1;
+    background:
+      linear-gradient(rgba(8,22,17,.60), rgba(8,22,17,.82)),
+      url('/assets/bg2.jpg') center / cover no-repeat;
+  }
+  .wrap { flex:1; max-width:520px; width:100%; margin:0 auto; padding:22px 18px 30px; display:flex; flex-direction:column; }
+  .logo { text-align:center; font-size:24px; font-weight:800; margin-bottom:8px; }
+  .logo span { color:var(--accent); }
+  h2 { font-size:22px; margin-bottom:14px; }
+  .card { background:var(--card); border:1px solid var(--gold); border-radius:18px; padding:20px; }
+  label { display:block; font-size:15px; opacity:.8; margin:14px 0 8px; }
+  input[type=text] {
+    width:100%; padding:14px 16px; font-size:18px; border-radius:12px; border:2px solid rgba(255,255,255,.15);
+    background:rgba(0,0,0,.25); color:#fff; outline:none;
+  }
+  input[type=text]:focus { border-color:var(--accent); }
+  .avatars { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-top:8px; max-height:320px; overflow-y:auto; padding:4px 2px; }
+  .av-opt { height:74px; font-size:32px; background:rgba(0,0,0,.28); border-radius:12px; display:flex; align-items:center; justify-content:center; cursor:pointer; border:2px solid rgba(217,179,74,.35); overflow:hidden; }
+  .av-opt.sel { border-color:var(--accent); box-shadow:0 0 10px rgba(240,210,132,.5); }
+  .avimg { width:100%; height:100%; object-fit:cover; display:block; }
+  .av-preview { text-align:center; margin:6px 0; height:96px; display:flex; align-items:center; justify-content:center; }
+  .av-preview .emoji { font-size:72px; }
+  .av-preview .avimg { width:96px; height:96px; border-radius:16px; border:2px solid var(--gold); }
+  .btn {
+    width:100%; background:var(--accent); color:#2a1a00; border:none; font-size:20px; font-weight:800;
+    padding:16px; border-radius:14px; cursor:pointer; margin-top:20px;
+  }
+  .btn:active { transform:translateY(2px); }
+  .btn.ghost { background:var(--card); color:#fff; }
+  .btn.rnd { width:auto; padding:10px 16px; font-size:15px; margin-top:10px; }
+
+  .me { display:flex; align-items:center; gap:10px; background:var(--card); border-radius:14px; padding:10px 14px; margin-bottom:16px; }
+  .me .av { width:42px; height:42px; flex:0 0 auto; display:flex; align-items:center; justify-content:center; font-size:32px; }
+  .me .av .avimg { width:42px; height:42px; border-radius:10px; }
+  .me .nm { font-size:17px; font-weight:700; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .me .editbtn { background:rgba(255,255,255,.16); border:none; color:#fff; font-size:13px; padding:6px 10px; border-radius:9px; cursor:pointer; }
+  .me .sc { font-weight:800; color:var(--accent); font-size:20px; min-width:40px; text-align:right; }
+
+  .center { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:14px; }
+  .big-emoji { font-size:70px; }
+  .status-txt { font-size:22px; font-weight:700; }
+  .sub { opacity:.75; font-size:16px; }
+
+  /* 倒计时（无进度条，最后 5 秒变红警告） */
+  .timer-wrap { margin-bottom:14px; text-align:center; }
+  .timer-num { font-size:22px; font-weight:800; }
+  .timer-warn { font-size:24px; font-weight:800; color:var(--bad); animation:blink .55s infinite; }
+  @keyframes blink { 50% { opacity:.3; } }
+
+  .qprompt { font-size:20px; font-weight:700; text-align:center; margin-bottom:16px; }
+  .opts { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .opt {
+    background:var(--card); border:none; color:#fff; border-radius:16px; padding:22px 12px; font-size:18px;
+    cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:8px; min-height:96px; justify-content:center;
+  }
+  .opt .key { width:38px; height:38px; border-radius:10px; background:rgba(255,255,255,.16); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:18px; }
+  .opt:active { transform:scale(.97); }
+  .opt.selected { outline:3px solid var(--accent); background:rgba(255,209,102,.28); }
+  .opt.picked { outline:3px solid var(--accent); background:rgba(255,209,102,.18); opacity:1; }
+  .opt:disabled { opacity:.55; }
+  .btn:disabled { opacity:.4; cursor:default; }
+  .btn:disabled:active { transform:none; }
+
+  .result-hero { text-align:center; padding:20px 0; }
+  .result-hero .icon { font-size:80px; }
+  .result-hero .txt { font-size:28px; font-weight:800; margin-top:6px; }
+  .result-hero.ok .txt { color:var(--ok); } .result-hero.bad .txt { color:var(--bad); }
+  .gain { font-size:20px; margin-top:6px; }
+  .rankbig { text-align:center; margin-top:10px; }
+  .rankbig .num { font-size:52px; font-weight:900; color:var(--accent); }
+  .connbar { background:var(--bad); text-align:center; padding:8px; font-size:14px; }
+  .hidden { display:none !important; }
+</style>
+</head>
+<body>
+<div id="conn" class="connbar hidden">连接断开，重连中…</div>
+<div class="wrap">
+  <div class="logo">🏁 竞速<span>答题</span></div>
+
+  <!-- 加入 -->
+  <section id="view-join">
+    <div class="card">
+      <h2>加入比赛</h2>
+      <label>昵称</label>
+      <input id="nick" type="text" maxlength="16" placeholder="给自己起个名字" />
+      <label>选择头像（来自头像库）</label>
+      <div class="av-preview" id="avPreview"></div>
+      <div class="avatars" id="avatars"></div>
+      <button class="btn rnd ghost" onclick="randomAvatar()">🎲 随机换一个</button>
+      <button class="btn" onclick="join()">进入比赛 →</button>
+    </div>
+  </section>
+
+  <!-- 修改资料 -->
+  <section id="view-edit" class="hidden">
+    <div class="card">
+      <h2>修改昵称 / 头像</h2>
+      <label>昵称</label>
+      <input id="nickEdit" type="text" maxlength="16" placeholder="给自己起个名字" />
+      <label>选择头像</label>
+      <div class="av-preview" id="avPreviewEdit"></div>
+      <div class="avatars" id="avatarsEdit"></div>
+      <button class="btn rnd ghost" onclick="randomAvatar()">🎲 随机换一个</button>
+      <button class="btn" onclick="saveProfile()">保存修改</button>
+      <button class="btn ghost" onclick="closeEdit()" style="margin-top:10px">取消</button>
+    </div>
+  </section>
+
+  <!-- 已加入后的各状态 -->
+  <section id="view-play" class="hidden">
+    <div class="me" id="meBar">
+      <span class="av" id="meAv"></span>
+      <span class="nm" id="meNick">玩家</span>
+      <button class="editbtn" id="editBtn" onclick="openEdit()">✏️ 修改</button>
+      <span class="sc" id="meScore">0</span>
+    </div>
+    <div id="playBody"></div>
+  </section>
+</div>
+
+<script>
+let AVATAR_IMAGES = [];            // 头像库图片（仅来自 /avatars 文件夹）
+let selectedAvatar = '';
+let ws, state = null, me = null, myId = localStorage.getItem('qr_playerId') || null;
+let editing = false;
+let clockOffset = 0, countdownTimer = null;
+
+const $ = (id)=>document.getElementById(id);
+function isImg(a){ return /^(https?:|\/)/.test(a); }
+function avatarHtml(a){ return isImg(a) ? `<img class="avimg" src="${a}" alt="">` : `<span class="emoji">${escapeHtml(a)}</span>`; }
+
+// 渲染头像选择器（仅头像库图片；同时更新加入页和修改页）
+function buildAvatars() {
+  let cells;
+  if (!AVATAR_IMAGES.length) {
+    cells = '<div style="grid-column:1/-1;opacity:.85;font-size:14px;padding:16px;text-align:center;line-height:1.6">头像库为空<br>请在电脑的 <b>avatars</b> 文件夹放入头像图片</div>';
+  } else {
+    cells = AVATAR_IMAGES.map(a => {
+      const safe = a.replace(/'/g, "\\'");
+      return `<div class="av-opt ${a===selectedAvatar?'sel':''}" onclick="pickAvatar('${safe}')"><img class="avimg" src="${a}"></div>`;
+    }).join('');
+  }
+  ['avatars','avatarsEdit'].forEach(id => { const box=$(id); if(box) box.innerHTML = cells; });
+  ['avPreview','avPreviewEdit'].forEach(id => { const box=$(id); if(box) box.innerHTML = selectedAvatar ? avatarHtml(selectedAvatar) : '<span class="emoji" style="font-size:16px;opacity:.7">未选择</span>'; });
+}
+function pickAvatar(a){ selectedAvatar=a; buildAvatars(); }
+function randomAvatar(){ if(!AVATAR_IMAGES.length) return; selectedAvatar = AVATAR_IMAGES[Math.floor(Math.random()*AVATAR_IMAGES.length)]; buildAvatars(); }
+
+// 载入头像库
+fetch('/api/avatars').then(r=>r.json()).then(d=>{
+  AVATAR_IMAGES = (d.avatars||[]);
+  if (AVATAR_IMAGES.length) selectedAvatar = AVATAR_IMAGES[Math.floor(Math.random()*AVATAR_IMAGES.length)];
+  buildAvatars();
+}).catch(()=>buildAvatars());
+buildAvatars();
+
+function connect() {
+  ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}`);
+  ws.onopen = () => {
+    $('conn').classList.add('hidden');
+    if (myId) send('playerReconnect', { playerId: myId, nickname: localStorage.getItem('qr_nick')||undefined, avatar: localStorage.getItem('qr_av')||undefined });
+  };
+  ws.onmessage = (e) => {
+    const msg = JSON.parse(e.data);
+    if (msg.type === 'self') { me = msg.player; myId = msg.id; localStorage.setItem('qr_playerId', myId); if(!editing) showPlay(); }
+    else if (msg.type === 'needRejoin') { myId=null; localStorage.removeItem('qr_playerId'); showJoin(); }
+    else if (msg.type === 'state') {
+      state = msg;
+      if (typeof msg.serverNow === 'number') clockOffset = msg.serverNow - Date.now();
+      if (myId) syncMe();
+      render();
+    }
+  };
+  ws.onclose = () => { $('conn').classList.remove('hidden'); setTimeout(connect, 1000); };
+}
+function send(type, extra={}){ if (ws && ws.readyState===1) ws.send(JSON.stringify({type, ...extra})); }
+connect();
+
+function join() {
+  const nick = ($('nick').value || '').trim() || ('玩家'+Math.floor(Math.random()*1000));
+  localStorage.setItem('qr_nick', nick);
+  localStorage.setItem('qr_av', selectedAvatar);
+  send('playerJoin', { nickname: nick, avatar: selectedAvatar });
+}
+
+// ---- 修改资料 ----
+function openEdit() {
+  editing = true;
+  selectedAvatar = me.avatar;
+  $('nickEdit').value = me.nickname;
+  buildAvatars();
+  $('view-play').classList.add('hidden');
+  $('view-edit').classList.remove('hidden');
+}
+function closeEdit() {
+  editing = false;
+  $('view-edit').classList.add('hidden');
+  showPlay();
+}
+function saveProfile() {
+  const nick = ($('nickEdit').value || '').trim() || me.nickname;
+  localStorage.setItem('qr_nick', nick);
+  localStorage.setItem('qr_av', selectedAvatar);
+  send('playerUpdate', { nickname: nick, avatar: selectedAvatar });
+  closeEdit();
+}
+
+function syncMe() {
+  if (!state) return;
+  const found = state.ranking.find(p => p.id === myId);
+  if (found) me = found;
+}
+function showJoin(){ $('view-join').classList.remove('hidden'); $('view-play').classList.add('hidden'); $('view-edit').classList.add('hidden'); }
+function showPlay(){ $('view-join').classList.add('hidden'); $('view-play').classList.remove('hidden'); }
+
+const KEYS=['A','B','C','D','E','F'];
+
+// ---- 倒计时 ----
+function stopCountdown(){ if(countdownTimer){ clearInterval(countdownTimer); countdownTimer=null; } }
+function startCountdown(){ if(countdownTimer) return; countdownTimer=setInterval(tickCountdown, 200); tickCountdown(); }
+function tickCountdown(){
+  if(!state || state.phase!=='answering' || !state.answerDeadline){ stopCountdown(); return; }
+  const wrap = $('timerWrap'); const numEl = $('timer');
+  const normal = $('timerNormal'); const warn = $('timerWarn');
+  if(!numEl){ return; }
+  const remain = Math.max(0, state.answerDeadline - (Date.now()+clockOffset));
+  const secs = Math.ceil(remain/1000);
+  numEl.textContent = secs;
+  const urgent = secs <= 5;                       // 最后 5 秒：只显示警告，隐藏普通倒计时
+  if(wrap) wrap.classList.toggle('urgent', urgent);
+  if(normal) normal.classList.toggle('hidden', urgent);
+  if(warn){
+    warn.classList.toggle('hidden', !urgent);
+    warn.textContent = urgent ? `⚠️ 抓紧作答！仅剩 ${secs} 秒` : '';
+  }
+  if(remain<=0){
+    const sb=$('submitBtn'); if(sb){ sb.disabled=true; sb.textContent='⏰ 时间到'; }
+    document.querySelectorAll('#playBody .opt').forEach(b=>b.disabled=true);
+    stopCountdown();
+  }
+}
+
+function render() {
+  if (!myId || !me) return; // 尚未加入
+  // 开始答题后（离开大厅）禁止修改昵称/头像
+  const canEdit = state.phase === 'lobby';
+  if (editing && !canEdit) closeEdit();
+  if (!editing) showPlay();
+  const eb = $('editBtn'); if (eb) eb.style.display = canEdit ? '' : 'none';
+  $('meAv').innerHTML = avatarHtml(me.avatar);
+  $('meNick').textContent = me.nickname;
+  $('meScore').textContent = me.score;
+  const body = $('playBody');
+  const rankSelf = state.ranking.find(p=>p.id===myId);
+  const rank = rankSelf ? rankSelf.rank : '-';
+
+  if (state.phase !== 'answering') stopCountdown();
+
+  if (state.phase === 'lobby') {
+    body.innerHTML = `<div class="center"><div class="big-emoji">✅</div>
+      <div class="status-txt">已加入，等待开始</div>
+      <div class="sub">可点上方「修改」更换昵称/头像</div></div>`;
+    return;
+  }
+  const q = state.question;
+  if (state.phase === 'intro') {
+    body.innerHTML = `<div class="center"><div class="big-emoji">📺</div>
+      <div class="status-txt">请看大屏视频</div>
+      <div class="sub">第 ${q.index+1}/${q.total} 题 · 马上出选项</div></div>`;
+    return;
+  }
+  if (state.phase === 'answering') {
+    const already = me.answered;
+    if (q.index !== curQ) { curQ = q.index; selectedOption = -1; }
+    const timedOut = state.answerDeadline && (state.answerDeadline - (Date.now()+clockOffset)) <= 0;
+    body.innerHTML = `
+      <div class="timer-wrap" id="timerWrap">
+        <div class="timer-num" id="timerNormal">⏱ 剩余 <span id="timer">--</span> 秒</div>
+        <div class="timer-warn hidden" id="timerWarn"></div>
+      </div>
+      <div class="qprompt">${escapeHtml(q.prompt)}</div>
+      <div class="opts">${q.options.map((o,i)=>{
+        const cls = already ? (myPick===i?'picked':'') : (selectedOption===i?'selected':'');
+        return `<button class="opt ${cls}" ${already||timedOut?'disabled':''} onclick="selectOption(${i})">
+           <div class="key">${KEYS[i]}</div><div>${escapeHtml(o.text)}</div></button>`;
+      }).join('')}</div>
+      ${already
+        ? '<div class="center" style="margin-top:16px"><div class="sub">✅ 已提交，等待公布…</div></div>'
+        : `<button class="btn" id="submitBtn" ${selectedOption<0||timedOut?'disabled':''} onclick="submitAnswer()">${timedOut?'⏰ 时间到':(selectedOption<0?'请选择一个答案':'提交答案')}</button>`}`;
+    startCountdown();
+    return;
+  }
+  if (state.phase === 'reveal') {
+    const correct = me.lastCorrect;
+    let hero;
+    if (correct === true) hero = `<div class="result-hero ok"><div class="icon">🎉</div><div class="txt">答对了！</div><div class="gain">+${me.lastGain} 分</div></div>`;
+    else if (correct === false) hero = `<div class="result-hero bad"><div class="icon">😖</div><div class="txt">答错了</div><div class="gain">正确答案：${KEYS[q.correctIndex]}</div></div>`;
+    else hero = `<div class="result-hero"><div class="icon">⌛</div><div class="txt">未作答</div><div class="gain">正确答案：${KEYS[q.correctIndex]}</div></div>`;
+    body.innerHTML = hero + `<div class="rankbig"><div class="sub">当前排名</div><div class="num">第 ${rank} 名</div><div class="sub">总分 ${me.score} · 请看大屏观看答案片段</div></div>`;
+    return;
+  }
+  if (state.phase === 'results') {
+    body.innerHTML = `<div class="result-hero ${rank===1?'ok':''}"><div class="icon">${rank===1?'🏆':'🎊'}</div>
+      <div class="txt">${rank===1?'冠军！':'比赛结束'}</div></div>
+      <div class="rankbig"><div class="sub">你的名次</div><div class="num">第 ${rank} 名</div><div class="sub">总分 ${me.score}</div></div>
+      <div class="center" style="margin-top:20px"><div class="sub">完整排名与各题视频请看大屏 🎬</div></div>`;
+    return;
+  }
+}
+
+let myPick = -1;         // 已提交的答案下标（用于回显）
+let selectedOption = -1; // 尚未提交、当前选中的答案
+let curQ = -1;           // 当前题号（用于换题时重置选择）
+function selectOption(i) {
+  if (me.answered) return;
+  selectedOption = i;
+  render();
+}
+function submitAnswer() {
+  if (me.answered || selectedOption < 0) return;
+  // 时间到则不允许提交
+  if (state.answerDeadline && (state.answerDeadline - (Date.now()+clockOffset)) <= 0) return;
+  myPick = selectedOption;
+  send('answer', { optionIndex: selectedOption });
+}
+
+function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+</script>
+</body>
+</html>
